@@ -19,14 +19,14 @@ func main() {
 		log.Println("No .env file found, using system environment variables")
 	}
 
-	// Get database URL from environment
+	// Get database URL from environment or use default
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		dbURL = "postgres://username:password@localhost/shorturl_db?sslmode=disable"
-		log.Println("Using default database URL. Set DATABASE_URL environment variable for production.")
+		dbURL = "postgres://shorturl_user:shorturl_pass@localhost:5432/shorturl_db?sslmode=disable"
+		log.Println("Using default PostgreSQL connection. Set DATABASE_URL environment variable for production.")
 	}
 
-	// Connect to database
+	// Connect to PostgreSQL database
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
@@ -38,10 +38,13 @@ func main() {
 		log.Fatal("Failed to ping database:", err)
 	}
 
-	// Create database instance and table
+	// Create database instance and tables
 	database := NewDatabase(db)
 	if err := database.CreateTable(); err != nil {
-		log.Fatal("Failed to create table:", err)
+		log.Fatal("Failed to create short_urls table:", err)
+	}
+	if err := database.CreateUserTable(); err != nil {
+		log.Fatal("Failed to create users table:", err)
 	}
 
 	// Create handlers
@@ -61,7 +64,8 @@ func main() {
 	// API routes
 	api := r.PathPrefix("/api").Subrouter()
 	api.HandleFunc("/shorten", appHandlers.ShortenURL).Methods("POST")
-
+	api.HandleFunc("/login", appHandlers.Login).Methods("POST")
+	api.HandleFunc("/signup", appHandlers.Signup).Methods("POST")
 	// Redirect route (catch-all for short codes)
 	r.PathPrefix("/").HandlerFunc(appHandlers.RedirectURL)
 

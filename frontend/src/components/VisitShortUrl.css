@@ -1,0 +1,246 @@
+.visit-short-url-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem;
+}
+
+.page-header {
+  max-width: 800px;
+  margin: 0 auto 3rem auto;
+  text-align: center;
+  color: white;
+}
+
+.back-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  margin-bottom: 2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.page-header h1 {
+  margin: 0 0 1rem 0;
+  font-size: 3rem;
+  font-weight: 300;
+}
+
+.page-header p {
+  margin: 0;
+  font-size: 1.2rem;
+  opacity: 0.9;
+}
+
+.visit-url-card {
+  max-width: 800px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 3rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #333;
+}
+
+.visit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-section label {
+  font-weight: 600;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.short-url-input {
+  width: 100%;
+  padding: 1.25rem;
+  border: 2px solid #e1e5e9;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.short-url-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.input-help {
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
+.error-message {
+  background: #fee;
+  color: #d32f2f;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  border: 1px solid #ffcdd2;
+  margin-top: 1rem;
+}
+
+.form-actions {
+  margin-top: 1rem;
+}
+
+.visit-button {
+  width: 100%;
+  padding: 1.25rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.visit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.visit-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.info-section {
+  padding-top: 3rem;
+  border-top: 1px solid #e1e5e9;
+}
+
+.info-card {
+  background: #f8f9fa;
+  border-radius: 16px;
+  padding: 2rem;
+  border: 1px solid #e1e5e9;
+}
+
+.info-card h3 {
+  margin: 0 0 2rem 0;
+  font-size: 1.5rem;
+  color: #333;
+  font-weight: 600;
+  text-align: center;
+}
+
+.info-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.info-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.step-content h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.step-content p {
+  margin: 0;
+  color: #666;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .visit-short-url-container {
+    padding: 1rem;
+  }
+  
+  .visit-url-card {
+    padding: 2rem;
+  }
+  
+  .page-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .info-steps {
+    gap: 2rem;
+  }
+  
+  .info-step {
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+  }
+  
+  .step-content {
+    text-align: center;
+  }
+}

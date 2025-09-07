@@ -10,7 +10,6 @@ A full-stack URL shortener application built with Go (backend) and React (fronte
 - Optional expiration for short URLs
 - Modern React frontend with instant feedback
 - RESTful API backend with PostgreSQL
-
 ---
 
 ## Project Structure
@@ -93,7 +92,6 @@ shorturl-app/
 ## License
 
 MIT
-
 ---
-
 Let me know if you want to add deployment, Docker, or more advanced usage instructions!
+
