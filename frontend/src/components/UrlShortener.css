@@ -1,0 +1,111 @@
+.url-shortener {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.url-form {
+  margin-bottom: 2rem;
+}
+
+.input-group {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.url-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.3s;
+  color: #333;
+}
+
+.url-input:focus {
+  border-color: #007bff;
+}
+
+.submit-btn {
+  padding: 12px 24px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  white-space: nowrap;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.submit-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 1rem;
+}
+
+.result {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1.5rem;
+  color: #333;
+}
+
+.result h3 {
+  margin-top: 0;
+  color: #495057;
+  margin-bottom: 1rem;
+}
+
+.short-url-container {
+  display: flex;
+  align-items: center;
+}
+
+.short-url-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #28a745;
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: white;
+  color: #28a745;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .input-group {
+    flex-direction: column;
+  }
+  
+  .url-shortener {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  
+  .App-header h1 {
+    font-size: 2rem;
+  }
+}
