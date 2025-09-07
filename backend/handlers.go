@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Handlers contains the HTTP handlers
@@ -60,6 +62,7 @@ func (h *Handlers) ShortenURL(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
+		fmt.Println("Returned existing short URL")
 		return
 	}
 
@@ -198,4 +201,230 @@ func (h *Handlers) renderErrorPage(w http.ResponseWriter, message string, status
 </html>`, statusCode, statusCode, message)
 
 	fmt.Fprint(w, html)
+}
+
+// Authentication handlers
+
+// LoginRequest represents the login request structure
+type LoginRequest struct {
+	UserID   string `json:"user_id"`
+	Password string `json:"password"`
+}
+
+// SignupRequest represents the signup request structure
+type SignupRequest struct {
+	UserID   string `json:"user_id"`
+	Password string `json:"password"`
+}
+
+// AuthResponse represents the authentication response structure
+type AuthResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Token   string `json:"token,omitempty"`
+	UserID  string `json:"user_id,omitempty"`
+}
+
+// Login handles POST /api/login
+func (h *Handlers) Login(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Login called")
+	var req LoginRequest
+
+	// Parse JSON request
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+	fmt.Println("Parsed login request for user:", req.UserID)
+
+	// Validate input
+	if req.UserID == "" || req.Password == "" {
+		response := AuthResponse{
+			Success: false,
+			Message: "User ID and password are required",
+		}
+		fmt.Println("Validation failed: missing user ID or password")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+	fmt.Println("User Id and Password is fine:")
+
+	// Get user from database
+	user, err := h.db.GetUserByUserID(req.UserID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			response := AuthResponse{
+				Success: false,
+				Message: "Invalid user ID or password",
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+		fmt.Println("Database error during login:", err)
+		response := AuthResponse{
+			Success: false,
+			Message: "Internal server error",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+	fmt.Println("User found with ID:", user.UserID)
+
+	// Verify password
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
+	if err != nil {
+		response := AuthResponse{
+			Success: false,
+			Message: "Invalid user ID or password",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+	fmt.Println("Password verified for user:", req.UserID)
+
+	// Generate simple token (in production, use JWT or similar)
+	token := fmt.Sprintf("token-%s-%d", req.UserID, time.Now().Unix())
+
+	response := AuthResponse{
+		Success: true,
+		Message: "Login successful",
+		Token:   token,
+		UserID:  req.UserID,
+	}
+
+	fmt.Println("Login successful for user:", req.UserID)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// Signup handles POST /api/signup
+func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Signup called")
+	var req SignupRequest
+
+	// Parse JSON request
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+	fmt.Println("Parsed signup request for user:", req.UserID)
+
+	// Validate input
+	if req.UserID == "" || req.Password == "" {
+		response := AuthResponse{
+			Success: false,
+			Message: "User ID and password are required",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+	fmt.Println("User Id and Password is fine:")
+
+	// Basic validation for user ID (alphanumeric, minimum length)
+	if len(req.UserID) < 3 {
+		response := AuthResponse{
+			Success: false,
+			Message: "User ID must be at least 3 characters long",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+	fmt.Println("validated user ID:", req.UserID)
+
+	// Basic validation for password (minimum length)
+	if len(req.Password) < 6 {
+		response := AuthResponse{
+			Success: false,
+			Message: "Password must be at least 6 characters long",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+	fmt.Println("validated password length for user:", req.UserID)
+
+	// Check if user already exists
+	exists, err := h.db.UserExists(req.UserID)
+	if err != nil {
+		fmt.Println("Database error checking user existence:", err)
+		response := AuthResponse{
+			Success: false,
+			Message: "Internal server error",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+	fmt.Println("User existence check for", req.UserID, ":", exists)
+
+	if exists {
+		response := AuthResponse{
+			Success: false,
+			Message: "User ID already exists",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+	fmt.Println("User ID is available:", req.UserID)
+
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		fmt.Println("Error hashing password:", err)
+		response := AuthResponse{
+			Success: false,
+			Message: "Internal server error",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+	fmt.Println("Password hashed successfully for user:", req.UserID)
+
+	// Create user in database
+	user, err := h.db.CreateUser(req.UserID, string(hashedPassword))
+	if err != nil {
+		fmt.Println("Error creating user:", err)
+		response := AuthResponse{
+			Success: false,
+			Message: "Failed to create user",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+	fmt.Println("User created with ID:", user.ID)
+
+	// Generate simple token (in production, use JWT or similar)
+	token := fmt.Sprintf("token-%s-%d", req.UserID, time.Now().Unix())
+
+	response := AuthResponse{
+		Success: true,
+		Message: "Signup successful",
+		Token:   token,
+		UserID:  user.UserID,
+	}
+
+	fmt.Println("Signup successful for user:", req.UserID)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
 }

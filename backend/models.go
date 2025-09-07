@@ -152,3 +152,86 @@ func (db *Database) CreateTable() error {
 	_, err := db.conn.Exec(query)
 	return err
 }
+
+// User represents a user in the database
+type User struct {
+	ID        int       `json:"id" db:"id"`
+	UserID    string    `json:"user_id" db:"user_id"`
+	Password  string    `json:"-" db:"password"` // Don't include password in JSON responses
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+}
+
+// CreateUserTable creates the users table if it doesn't exist
+func (db *Database) CreateUserTable() error {
+	fmt.Println("CreateUserTable called")
+	query := `
+		CREATE TABLE IF NOT EXISTS users (
+			id SERIAL PRIMARY KEY,
+			user_id VARCHAR(50) UNIQUE NOT NULL,
+			password VARCHAR(255) NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+		);
+		
+		CREATE INDEX IF NOT EXISTS idx_user_id ON users(user_id);
+	`
+
+	_, err := db.conn.Exec(query)
+	return err
+}
+
+// CreateUser inserts a new user and returns the user ID
+func (db *Database) CreateUser(userID, hashedPassword string) (*User, error) {
+	query := `
+		INSERT INTO users (user_id, password, created_at, updated_at)
+		VALUES ($1, $2, NOW(), NOW())
+		RETURNING id, user_id, created_at, updated_at`
+
+	user := &User{}
+	err := db.conn.QueryRow(query, userID, hashedPassword).Scan(
+		&user.ID,
+		&user.UserID,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+// GetUserByUserID retrieves a user by their user ID
+func (db *Database) GetUserByUserID(userID string) (*User, error) {
+	query := `SELECT id, user_id, password, created_at, updated_at FROM users WHERE user_id = $1`
+
+	user := &User{}
+	err := db.conn.QueryRow(query, userID).Scan(
+		&user.ID,
+		&user.UserID,
+		&user.Password,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+// UserExists checks if a user with the given user ID already exists
+func (db *Database) UserExists(userID string) (bool, error) {
+	query := `SELECT COUNT(*) FROM users WHERE user_id = $1`
+
+	var count int
+	err := db.conn.QueryRow(query, userID).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
