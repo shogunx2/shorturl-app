@@ -45,27 +45,9 @@ func NewDatabase(conn *sql.DB) *Database {
 	return &Database{conn: conn}
 }
 
-// GetByShortCode retrieves a short URL by its short code
-func (db *Database) GetByShortCode(shortCode string) (*ShortURL, error) {
-	fmt.Println("GetByShortCode called with shortCode:", shortCode)
-	query := `SELECT id, short_code, original_url, created_at, expires_at, click_count FROM short_urls WHERE short_code = $1`
-	shortURL := &ShortURL{}
-	err := db.conn.QueryRow(query, shortCode).Scan(
-		&shortURL.ID,
-		&shortURL.ShortCode,
-		&shortURL.OriginalURL,
-		&shortURL.CreatedAt,
-		&shortURL.ExpiresAt,
-		&shortURL.ClickCount,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return shortURL, nil
-}
-
 // Create inserts a new short URL and returns its ID
 func (db *Database) Create(shortURL *ShortURL) (int64, error) {
+	fmt.Println("Create called with shortURL:", shortURL)
 	query := `
 		INSERT INTO short_urls (short_code, original_url, created_at, expires_at, click_count)
 		VALUES ($1, $2, $3, $4, $5)
@@ -132,6 +114,27 @@ func (db *Database) IncrementClickCount(id int) error {
 	return err
 }
 
+// GetByShortCode retrieves a short URL by its short code
+func (db *Database) GetByShortCode(shortCode string) (*ShortURL, error) {
+	query := `SELECT id, short_code, original_url, created_at, expires_at, click_count FROM short_urls WHERE short_code = $1`
+
+	shortURL := &ShortURL{}
+	err := db.conn.QueryRow(query, shortCode).Scan(
+		&shortURL.ID,
+		&shortURL.ShortCode,
+		&shortURL.OriginalURL,
+		&shortURL.CreatedAt,
+		&shortURL.ExpiresAt,
+		&shortURL.ClickCount,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return shortURL, nil
+}
+
 // CreateTable creates the short_urls table if it doesn't exist
 func (db *Database) CreateTable() error {
 	fmt.Println("CreateTable called")
@@ -157,7 +160,7 @@ func (db *Database) CreateTable() error {
 type User struct {
 	ID        int       `json:"id" db:"id"`
 	UserID    string    `json:"user_id" db:"user_id"`
-	Password  string    `json:"-" db:"password"` // Don't include password in JSON responses
+	Password  string    `json:"password" db:"password"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
@@ -168,7 +171,7 @@ func (db *Database) CreateUserTable() error {
 	query := `
 		CREATE TABLE IF NOT EXISTS users (
 			id SERIAL PRIMARY KEY,
-			user_id VARCHAR(50) UNIQUE NOT NULL,
+			user_id VARCHAR(255) UNIQUE NOT NULL,
 			password VARCHAR(255) NOT NULL,
 			created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 			updated_at TIMESTAMP NOT NULL DEFAULT NOW()
@@ -181,21 +184,23 @@ func (db *Database) CreateUserTable() error {
 	return err
 }
 
-// CreateUser inserts a new user and returns the user ID
+// CreateUser inserts a new user and returns the user struct
 func (db *Database) CreateUser(userID, hashedPassword string) (*User, error) {
+	fmt.Println("CreateUser called with user_id:", userID)
+	now := time.Now()
 	query := `
 		INSERT INTO users (user_id, password, created_at, updated_at)
-		VALUES ($1, $2, NOW(), NOW())
-		RETURNING id, user_id, created_at, updated_at`
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, user_id, password, created_at, updated_at`
 
 	user := &User{}
-	err := db.conn.QueryRow(query, userID, hashedPassword).Scan(
+	err := db.conn.QueryRow(query, userID, hashedPassword, now, now).Scan(
 		&user.ID,
 		&user.UserID,
+		&user.Password,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
-
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +208,7 @@ func (db *Database) CreateUser(userID, hashedPassword string) (*User, error) {
 	return user, nil
 }
 
-// GetUserByUserID retrieves a user by their user ID
+// GetUserByUserID retrieves a user by their user_id
 func (db *Database) GetUserByUserID(userID string) (*User, error) {
 	query := `SELECT id, user_id, password, created_at, updated_at FROM users WHERE user_id = $1`
 
@@ -223,15 +228,15 @@ func (db *Database) GetUserByUserID(userID string) (*User, error) {
 	return user, nil
 }
 
-// UserExists checks if a user with the given user ID already exists
+// UserExists checks if a user with the given user_id exists
 func (db *Database) UserExists(userID string) (bool, error) {
-	query := `SELECT COUNT(*) FROM users WHERE user_id = $1`
+	query := `SELECT EXISTS(SELECT 1 FROM users WHERE user_id = $1)`
 
-	var count int
-	err := db.conn.QueryRow(query, userID).Scan(&count)
+	var exists bool
+	err := db.conn.QueryRow(query, userID).Scan(&exists)
 	if err != nil {
 		return false, err
 	}
 
-	return count > 0, nil
+	return exists, nil
 }

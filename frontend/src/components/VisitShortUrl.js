@@ -42,44 +42,15 @@ const VisitShortUrl = ({ onBack }) => {
     try {
       const shortCode = extractShortCode(shortUrl.trim());
       
-      // Make a GET request to the backend to get the original URL
+      // Simply open the short URL in a new tab
+      // The backend will handle the redirect automatically
       console.log('Visiting short code:', shortCode);
-      const response = await fetch(`http://localhost:8080/${shortCode}`, {
-        method: 'GET',
-        redirect: 'manual' // Don't follow redirects automatically
-      });
-
-      if (response.type === 'opaqueredirect' || response.status === 302 || response.status === 301) {
-        // For redirects, we need to construct the redirect URL
-        // Since we can't get the Location header in the browser due to CORS,
-        // we'll open the short URL directly
-        console.log('Redirecting to original URL');
-        const fullShortUrl = shortCode.startsWith('http') ? shortCode : `http://localhost:8080/${shortCode}`;
-        window.open(fullShortUrl, '_blank');
-      } else if (response.ok) {
-        // If we get a 200 response, try to extract the URL from the response
-        console.log('Response OK, extracting original URL');
-        const data = await response.json();
-        if (data.original_url) {
-          window.open(data.original_url, '_blank');
-        } else {
-          throw new Error('Invalid response format');
-        }
-      } else if (response.status === 404) {
-        setError('Short URL not found. Please check the URL and try again.');
-      } else if (response.status === 410) {
-        setError('This short URL has expired.');
-      } else {
-        setError(`Error: ${response.status} - ${response.statusText}`);
-      }
+      const fullShortUrl = shortCode.startsWith('http') ? shortCode : `http://localhost:8080/${shortCode}`;
+      window.open(fullShortUrl, '_blank');
+      setError('');
     } catch (err) {
       console.error('Error occurred:', err);
-      
-      if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        setError('Cannot connect to server. Make sure the backend is running on port 8080.');
-      } else {
-        setError('Something went wrong: ' + err.message);
-      }
+      setError('Something went wrong: ' + err.message);
     } finally {
       setLoading(false);
     }
